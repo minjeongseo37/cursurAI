@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>컬러풀 노션형 메모장</title>
+    <link rel="stylesheet" href="notepad.css">
+</head>
+<body>
+    <div class="container">
+        <h1>노션 스타일 메모장</h1>
+        <div class="new-note">
+            <input type="text" id="newTitle" placeholder="제목" maxlength="30">
+            <textarea id="newContent" placeholder="메모 내용" maxlength="200"></textarea>
+            <input type="text" id="newLabel" placeholder="라벨(쉼표로 구분)" maxlength="30">
+            <input type="color" id="newColor" value="#b5ead7" title="카드 색상 선택">
+            <button onclick="addNote()">추가</button>
+        </div>
+        <div class="notes" id="notes"></div>
+    </div>
+    <script src="notepad.js"></script>
+</body>
+</html> 

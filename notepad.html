@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>컬러풀 노션형 메모장</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f8ffae 0%, #a1c4fd 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .new-note {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .new-note input, .new-note textarea {
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+        }
+        .new-note input[type="color"] {
+            width: 40px;
+            height: 40px;
+            border: none;
+            padding: 0;
+        }
+        .new-note input[type="text"] {
+            width: 140px;
+        }
+        .new-note textarea {
+            width: 220px;
+            height: 40px;
+            resize: none;
+        }
+        .new-note button {
+            background: #b5ead7;
+            color: #555;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 18px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .new-note button:hover {
+            background: #c7ceea;
+        }
+        .notes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .note-card {
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            padding: 20px 18px 16px 18px;
+            min-width: 220px;
+            max-width: 260px;
+            position: relative;
+            transition: transform 0.18s, box-shadow 0.18s;
+            animation: popIn 0.4s cubic-bezier(.68,-0.55,.27,1.55);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.7); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .note-card:hover {
+            transform: translateY(-6px) scale(1.03);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.13);
+        }
+        .note-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+        .note-content {
+            font-size: 1rem;
+            margin-bottom: 12px;
+            white-space: pre-wrap;
+        }
+        .note-labels {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .label {
+            background: #f3b5e8;
+            color: #555;
+            border-radius: 12px;
+            padding: 2px 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-block;
+            margin-right: 2px;
+            margin-bottom: 2px;
+            transition: background 0.2s;
+        }
+        .note-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 6px;
+        }
+        .note-actions button {
+            background: #ffdac1;
+            color: #555;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .note-actions button.edit {
+            background: #b5ead7;
+        }
+        .note-actions button.edit:hover {
+            background: #c7ceea;
+        }
+        .note-actions button.delete:hover {
+            background: #ffb7b2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>노션 스타일 메모장</h1>
+        <div class="new-note">
+            <input type="text" id="newTitle" placeholder="제목" maxlength="30">
+            <textarea id="newContent" placeholder="메모 내용" maxlength="200"></textarea>
+            <input type="text" id="newLabel" placeholder="라벨(쉼표로 구분)" maxlength="30">
+            <input type="color" id="newColor" value="#43cea2" title="카드 색상 선택">
+            <button onclick="addNote()">추가</button>
+        </div>
+        <div class="notes" id="notes"></div>
+    </div>
+    <script>
+        const NOTES_KEY = 'notion_notes';
+        let notes = [];
+        let editIndex = null;
+
+        function saveNotes() {
+            localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+        }
+        function loadNotes() {
+            const data = localStorage.getItem(NOTES_KEY);
+            notes = data ? JSON.parse(data) : [];
+        }
+        function renderNotes() {
+            const notesDiv = document.getElementById('notes');
+            notesDiv.innerHTML = '';
+            notes.forEach((note, idx) => {
+                const card = document.createElement('div');
+                card.className = 'note-card';
+                card.style.background = note.color;
+                card.innerHTML = `
+                    <div class="note-title">${note.title || '(제목 없음)'}</div>
+                    <div class="note-content">${note.content || ''}</div>
+                    <div class="note-labels">
+                        ${(note.labels||[]).map(l => `<span class='label'>${l}</span>`).join('')}
+                    </div>
+                    <div class="note-actions">
+                        <button class="edit" title="수정" onclick="startEdit(${idx})">✏️</button>
+                        <button class="delete" title="삭제" onclick="deleteNote(${idx})">🗑️</button>
+                    </div>
+                `;
+                notesDiv.appendChild(card);
+            });
+        }
+        function addNote() {
+            const title = document.getElementById('newTitle').value.trim();
+            const content = document.getElementById('newContent').value.trim();
+            const labelStr = document.getElementById('newLabel').value.trim();
+            const color = document.getElementById('newColor').value;
+            const labels = labelStr ? labelStr.split(',').map(l => l.trim()).filter(l => l) : [];
+            if (!title && !content) {
+                alert('제목이나 내용을 입력하세요!');
+                return;
+            }
+            if (editIndex !== null) {
+                notes[editIndex] = { title, content, labels, color };
+                editIndex = null;
+            } else {
+                notes.unshift({ title, content, labels, color });
+            }
+            saveNotes();
+            renderNotes();
+            document.getElementById('newTitle').value = '';
+            document.getElementById('newContent').value = '';
+            document.getElementById('newLabel').value = '';
+            document.getElementById('newColor').value = getRandomColor();
+        }
+        function deleteNote(idx) {
+            if (confirm('정말 삭제하시겠습니까?')) {
+                notes.splice(idx, 1);
+                saveNotes();
+                renderNotes();
+            }
+        }
+        function startEdit(idx) {
+            const note = notes[idx];
+            document.getElementById('newTitle').value = note.title;
+            document.getElementById('newContent').value = note.content;
+            document.getElementById('newLabel').value = (note.labels||[]).join(', ');
+            document.getElementById('newColor').value = note.color;
+            editIndex = idx;
+        }
+        function getRandomColor() {
+            const palette = [
+                '#b5ead7', // 민트
+                '#c7ceea', // 연보라
+                '#ffdac1', // 살구
+                '#f3b5e8', // 연분홍
+                '#ffb7b2', // 연살구
+                '#e2f0cb', // 연연두
+                '#a1c4fd', // 연하늘
+                '#f8ffae', // 연노랑
+                '#ffd6e0', // 연핑크
+                '#d4fc79', // 연연두
+                '#c1f7d3', // 연민트
+                '#f6eac2'  // 연베이지
+            ];
+            return palette[Math.floor(Math.random()*palette.length)];
+        }
+        // 초기화
+        window.onload = function() {
+            loadNotes();
+            renderNotes();
+            document.getElementById('newColor').value = getRandomColor();
+        }
+    </script>
+</body>
+</html> 
