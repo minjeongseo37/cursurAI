@@ -19,5 +19,11 @@
         <div class="notes" id="notes"></div>
     </div>
     <script src="notepad.js"></script>
+    <script>
+    if ("Notification" in window) {
+      Notification.requestPermission();
+      new Notification("일정 알림", { body: "회의 시작 10분 전!" });
+    }
+    </script>
 </body>
 </html> 
